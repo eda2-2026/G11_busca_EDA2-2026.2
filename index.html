@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Simulador de busca linear para descobrir a capacidade máxima de uma ponte."
+    />
+    <title>Bridge Lab | Busca Linear</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body data-state="ready">
+    <header class="site-header">
+      <a class="brand" href="#main-content" aria-label="Bridge Lab — ir para o simulador">
+        <span class="brand-mark" aria-hidden="true">BL</span>
+        <span>
+          <strong>Bridge Lab</strong>
+          <small>Estruturas de Dados 2</small>
+        </span>
+      </a>
+      <span class="stage-badge">Etapa 1 · Busca linear</span>
+    </header>
+
+    <main id="main-content" class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Simulação de resistência</p>
+          <h1 id="page-title">Descubra o limite da ponte, carga por carga.</h1>
+          <p class="hero-copy">
+            Gere uma capacidade secreta e acompanhe a busca linear aumentar a carga em
+            1 kg por tentativa até encontrar o limite estrutural.
+          </p>
+        </div>
+        <div class="hero-rule" aria-hidden="true">
+          <span>mínimo</span><i></i><strong>+1 kg</strong><i></i><span>ruptura</span>
+        </div>
+      </section>
+
+      <section class="simulator-grid" aria-label="Simulador da ponte">
+        <aside class="panel controls-panel" aria-labelledby="controls-title">
+          <div class="section-heading">
+            <span class="step-number">01</span>
+            <div>
+              <p class="eyebrow">Configuração</p>
+              <h2 id="controls-title">Intervalo de cargas</h2>
+            </div>
+          </div>
+
+          <form id="range-form" novalidate>
+            <div class="field-grid">
+              <label for="min-load">
+                Carga mínima
+                <span class="input-shell">
+                  <input
+                    id="min-load"
+                    name="minLoad"
+                    type="number"
+                    min="1"
+                    max="9999"
+                    step="1"
+                    value="500"
+                    inputmode="numeric"
+                  />
+                  <small>kg</small>
+                </span>
+              </label>
+
+              <label for="max-load">
+                Carga máxima
+                <span class="input-shell">
+                  <input
+                    id="max-load"
+                    name="maxLoad"
+                    type="number"
+                    min="2"
+                    max="10000"
+                    step="1"
+                    value="2000"
+                    inputmode="numeric"
+                  />
+                  <small>kg</small>
+                </span>
+              </label>
+            </div>
+
+            <p id="validation-message" class="validation-message" role="alert"></p>
+
+            <div class="button-stack">
+              <button id="generate-bridge" class="button button-secondary" type="submit">
+                Gerar nova ponte
+              </button>
+              <button id="run-linear" class="button button-primary" type="button" disabled>
+                Iniciar busca linear
+              </button>
+            </div>
+          </form>
+
+          <p class="range-note">Valores inteiros entre 1 kg e 10.000 kg.</p>
+        </aside>
+
+        <section class="panel bridge-panel" aria-labelledby="bridge-title">
+          <div class="bridge-panel-header">
+            <div>
+              <p class="eyebrow">Ponte de teste</p>
+              <h2 id="bridge-title">Capacidade secreta</h2>
+            </div>
+            <div id="secret-capacity" class="secret-capacity" aria-live="polite">?? kg</div>
+          </div>
+
+          <div id="bridge-visual" class="bridge-visual" data-state="ready" aria-hidden="true">
+            <div class="sky-glow"></div>
+            <div class="bridge-cable cable-left"></div>
+            <div class="bridge-cable cable-right"></div>
+            <div class="bridge-tower tower-left"><i></i><i></i></div>
+            <div class="bridge-tower tower-right"><i></i><i></i></div>
+            <div class="bridge-deck"><span></span><span></span><span></span></div>
+            <div class="test-truck">
+              <div class="truck-load">0 kg</div>
+              <div class="truck-cabin"></div>
+              <div class="truck-bed"></div>
+              <i class="wheel wheel-left"></i>
+              <i class="wheel wheel-right"></i>
+            </div>
+            <div class="river"></div>
+          </div>
+
+          <div class="status-line">
+            <span id="status-indicator" class="status-indicator" aria-hidden="true"></span>
+            <p id="bridge-status" role="status" aria-live="polite">
+              Configure o intervalo e gere uma ponte para começar.
+            </p>
+          </div>
+        </section>
+      </section>
+
+      <section class="metrics" aria-label="Resultados da simulação">
+        <article class="metric-card">
+          <span>Carga testada</span>
+          <strong id="tested-load">—</strong>
+        </article>
+        <article class="metric-card">
+          <span>Tentativas</span>
+          <strong id="attempt-count">0</strong>
+        </article>
+        <article class="metric-card">
+          <span>Maior carga suportada</span>
+          <strong id="highest-supported">—</strong>
+        </article>
+        <article class="metric-card metric-result">
+          <span>Resultado atual</span>
+          <strong id="trial-result">Aguardando</strong>
+        </article>
+      </section>
+
+      <section class="algorithms" aria-labelledby="algorithms-title">
+        <div class="section-heading">
+          <span class="step-number">02</span>
+          <div>
+            <p class="eyebrow">Algoritmos</p>
+            <h2 id="algorithms-title">Estratégias de descoberta</h2>
+          </div>
+        </div>
+
+        <div class="algorithm-grid">
+          <article class="algorithm-card active-algorithm">
+            <div class="algorithm-card-header">
+              <span class="algorithm-icon">L</span>
+              <span class="status-chip ready-chip">Disponível</span>
+            </div>
+            <h3>Busca linear</h3>
+            <p>Testa cada carga em ordem crescente, avançando exatamente 1 kg por vez.</p>
+            <div id="attempt-log" class="attempt-log" aria-live="polite">
+              Nenhuma tentativa executada.
+            </div>
+          </article>
+
+          <article id="binary-search-card" class="algorithm-card pending-algorithm" aria-disabled="true">
+            <div class="algorithm-card-header">
+              <span class="algorithm-icon">B</span>
+              <span class="status-chip pending-chip">Pendente para a etapa 2</span>
+            </div>
+            <h3>Busca binária</h3>
+            <p>
+              O painel interativo, os limites inferior, central e superior e a comparação
+              de eficiência serão implementados pelo Aluno 2.
+            </p>
+            <div class="pending-placeholder" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>G11 · EDA2 · 2026.2</span>
+      <span>Etapa do Aluno 1</span>
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
