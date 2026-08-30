@@ -1,4 +1,5 @@
 import {
+  binarySearch,
   generateSecretCapacity,
   linearSearch,
   validateLoadRange,
@@ -70,6 +71,8 @@ export function createBridgeSimulator(
     validationMessage: required(documentRef, "#validation-message"),
     generateButton: required(documentRef, "#generate-bridge"),
     runButton: required(documentRef, "#run-linear"),
+    runBinaryButton: required(documentRef, "#run-binary"),
+    binarySearchLog: required(documentRef, "#binary-search-log"),
     secretCapacity: required(documentRef, "#secret-capacity"),
     bridgeVisual: required(documentRef, "#bridge-visual"),
     bridgeStatus: required(documentRef, "#bridge-status"),
@@ -78,6 +81,10 @@ export function createBridgeSimulator(
     highestSupported: required(documentRef, "#highest-supported"),
     trialResult: required(documentRef, "#trial-result"),
     attemptLog: required(documentRef, "#attempt-log"),
+    linearAttempts: required(documentRef, "#linear-attempts"),
+    binaryAttempts: required(documentRef, "#binary-attempts"),
+    comparisonWinner: required(documentRef, "#comparison-winner"),
+    comparisonDifference: required(documentRef, "#comparison-difference"),
     truck: required(documentRef, ".test-truck"),
     truckLoad: required(documentRef, ".truck-load"),
   };
@@ -88,6 +95,8 @@ export function createBridgeSimulator(
     secretCapacity: null,
     running: false,
     result: null,
+    linearResult: null,
+    binaryResult: null,
   };
 
   function setVisualState(visualState) {
@@ -100,6 +109,49 @@ export function createBridgeSimulator(
     elements.maximumInput.disabled = locked;
     elements.generateButton.disabled = locked;
     elements.runButton.disabled = locked || state.secretCapacity === null;
+    elements.runBinaryButton.disabled = locked || state.secretCapacity === null;
+  }
+
+  function updateComparisonPanel() {
+    const linearCount = state.linearResult?.attemptCount ?? null;
+    const binaryCount = state.binaryResult?.attemptCount ?? null;
+
+    if (linearCount === null && binaryCount === null) {
+      elements.linearAttempts.textContent = "Aguardando";
+      elements.binaryAttempts.textContent = "Aguardando";
+      elements.comparisonWinner.textContent = "—";
+      elements.comparisonDifference.textContent = "Execute as duas buscas para comparar.";
+      return;
+    }
+
+    elements.linearAttempts.textContent =
+      linearCount === null ? "Aguardando" : `${linearCount.toLocaleString("pt-BR")} tentativas`;
+    elements.binaryAttempts.textContent =
+      binaryCount === null ? "Aguardando" : `${binaryCount.toLocaleString("pt-BR")} tentativas`;
+
+    if (linearCount === null || binaryCount === null) {
+      elements.comparisonWinner.textContent =
+        linearCount === null ? "Aguardando busca linear" : "Aguardando busca binária";
+      elements.comparisonDifference.textContent =
+        linearCount === null
+          ? "Execute a busca linear para comparar o desempenho."
+          : "Execute a busca binária para comparar o desempenho.";
+      return;
+    }
+
+    if (linearCount === binaryCount) {
+      elements.comparisonWinner.textContent = "Empate";
+      elements.comparisonDifference.textContent = "Mesma quantidade de tentativas";
+      return;
+    }
+
+    const winner = linearCount < binaryCount ? "Busca linear" : "Busca binária";
+    const difference = Math.abs(linearCount - binaryCount);
+    elements.comparisonWinner.textContent = winner;
+    elements.comparisonDifference.textContent =
+      difference === 1
+        ? "1 tentativa de diferença"
+        : `${difference.toLocaleString("pt-BR")} tentativas de diferença`;
   }
 
   function resetMetrics() {
@@ -108,6 +160,11 @@ export function createBridgeSimulator(
     elements.highestSupported.textContent = "—";
     elements.trialResult.textContent = "Aguardando";
     elements.attemptLog.textContent = "Nenhuma tentativa executada.";
+    elements.binarySearchLog.textContent = "Nenhuma tentativa executada.";
+    elements.linearAttempts.textContent = "Aguardando";
+    elements.binaryAttempts.textContent = "Aguardando";
+    elements.comparisonWinner.textContent = "—";
+    elements.comparisonDifference.textContent = "Execute as duas buscas para comparar.";
     elements.truckLoad.textContent = "0 kg";
     elements.truck.style.left = "8%";
   }
@@ -121,8 +178,12 @@ export function createBridgeSimulator(
     state.maximum = null;
     state.secretCapacity = null;
     state.result = null;
+    state.linearResult = null;
+    state.binaryResult = null;
     elements.runButton.disabled = true;
+    elements.runBinaryButton.disabled = true;
     elements.runButton.textContent = "Iniciar busca linear";
+    elements.runBinaryButton.textContent = "Iniciar busca binária";
     elements.secretCapacity.textContent = "?? kg";
     elements.bridgeStatus.textContent = "Intervalo alterado. Gere uma nova ponte.";
     setVisualState("ready");
@@ -134,11 +195,15 @@ export function createBridgeSimulator(
     state.maximum = null;
     state.secretCapacity = null;
     state.result = null;
+    state.linearResult = null;
+    state.binaryResult = null;
     elements.validationMessage.textContent = error;
     elements.bridgeStatus.textContent = "Entrada inválida. Revise o intervalo informado.";
     elements.secretCapacity.textContent = "?? kg";
     elements.runButton.disabled = true;
+    elements.runBinaryButton.disabled = true;
     elements.runButton.textContent = "Iniciar busca linear";
+    elements.runBinaryButton.textContent = "Iniciar busca binária";
     setVisualState("invalid");
     resetMetrics();
   }
@@ -166,13 +231,17 @@ export function createBridgeSimulator(
       random,
     );
     state.result = null;
+    state.linearResult = null;
+    state.binaryResult = null;
 
     elements.validationMessage.textContent = "";
     elements.secretCapacity.textContent = "Capacidade definida";
     elements.bridgeStatus.textContent =
       "Ponte pronta. A capacidade permanece secreta até o fim do teste.";
     elements.runButton.disabled = false;
+    elements.runBinaryButton.disabled = false;
     elements.runButton.textContent = "Iniciar busca linear";
+    elements.runBinaryButton.textContent = "Iniciar busca binária";
     setVisualState("ready");
     resetMetrics();
 
@@ -224,6 +293,7 @@ export function createBridgeSimulator(
     elements.bridgeStatus.textContent = "Busca linear em execução.";
     elements.trialResult.textContent = "Testando";
     elements.attemptLog.textContent = "Preparando a primeira carga…";
+    elements.binarySearchLog.textContent = "Preparando a primeira carga…";
 
     try {
       const result = linearSearch(
@@ -242,10 +312,12 @@ export function createBridgeSimulator(
       }
 
       state.result = result;
+      state.linearResult = result;
       elements.attemptCount.textContent = String(result.attemptCount);
       elements.highestSupported.textContent = formatLoad(result.highestSupported);
       elements.secretCapacity.textContent = formatLoad(result.capacity);
       elements.runButton.textContent = "Executar novamente";
+      updateComparisonPanel();
 
       if (result.bridgeBroke) {
         elements.testedLoad.textContent = formatLoad(result.brokenAt);
@@ -256,6 +328,9 @@ export function createBridgeSimulator(
         elements.attemptLog.textContent =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
+        elements.binarySearchLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
         setVisualState("broken");
       } else {
         elements.testedLoad.textContent = formatLoad(result.maximum);
@@ -263,6 +338,83 @@ export function createBridgeSimulator(
         elements.bridgeStatus.textContent =
           `A ponte suportou a carga máxima de ${formatLoad(result.maximum)} sem quebrar.`;
         elements.attemptLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          "intervalo concluído sem tentativa de ruptura.";
+        elements.binarySearchLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          "intervalo concluído sem tentativa de ruptura.";
+        setVisualState("completed");
+      }
+
+      return result;
+    } finally {
+      state.running = false;
+      setControlsLocked(false);
+    }
+  }
+
+  async function runBinarySimulation() {
+    if (state.running || state.secretCapacity === null) {
+      return null;
+    }
+
+    state.running = true;
+    state.result = null;
+    setControlsLocked(true);
+    setVisualState("testing");
+    elements.validationMessage.textContent = "";
+    elements.secretCapacity.textContent = "Testando…";
+    elements.bridgeStatus.textContent = "Busca binária em execução.";
+    elements.trialResult.textContent = "Testando";
+    elements.attemptLog.textContent = "Preparando a primeira avaliação do meio do intervalo…";
+    elements.binarySearchLog.textContent = "Preparando a primeira avaliação do meio do intervalo…";
+
+    try {
+      const result = binarySearch(
+        state.minimum,
+        state.maximum,
+        state.secretCapacity,
+      );
+      const frames = selectAnimationFrames(result.attempts);
+      let previousIndex = -1;
+
+      for (const frame of frames) {
+        const skippedCount = Math.max(0, frame.index - previousIndex - 1);
+        renderAttempt(frame.attempt, frame.index + 1, skippedCount);
+        previousIndex = frame.index;
+        await delay(animationDelay);
+      }
+
+      state.result = result;
+      state.binaryResult = result;
+      elements.attemptCount.textContent = String(result.attemptCount);
+      elements.highestSupported.textContent = formatLoad(result.highestSupported);
+      elements.secretCapacity.textContent = formatLoad(result.capacity);
+      elements.runBinaryButton.textContent = "Executar novamente";
+      updateComparisonPanel();
+
+      if (result.bridgeBroke) {
+        elements.testedLoad.textContent = formatLoad(result.brokenAt);
+        elements.trialResult.textContent = "Quebrou";
+        elements.bridgeStatus.textContent =
+          `Limite encontrado por busca binária: ${formatLoad(result.highestSupported)}. ` +
+          `A primeira ruptura ocorreu em ${formatLoad(result.brokenAt)}.`;
+        elements.attemptLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
+        elements.binarySearchLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
+        setVisualState("broken");
+      } else {
+        elements.testedLoad.textContent = formatLoad(result.maximum);
+        elements.trialResult.textContent = "Concluída";
+        elements.bridgeStatus.textContent =
+          `A ponte suportou a carga máxima de ${formatLoad(result.maximum)} sem quebrar.`;
+        elements.attemptLog.textContent =
+          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
+          "intervalo concluído sem tentativa de ruptura.";
+        elements.binarySearchLog.textContent =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           "intervalo concluído sem tentativa de ruptura.";
         setVisualState("completed");
@@ -282,15 +434,20 @@ export function createBridgeSimulator(
   elements.runButton.addEventListener("click", () => {
     void runLinearSimulation();
   });
+  elements.runBinaryButton.addEventListener("click", () => {
+    void runBinarySimulation();
+  });
   elements.minimumInput.addEventListener("input", invalidateGeneratedBridge);
   elements.maximumInput.addEventListener("input", invalidateGeneratedBridge);
 
   elements.runButton.disabled = true;
+  elements.runBinaryButton.disabled = true;
   resetMetrics();
 
   return {
     generateBridge,
     runLinearSimulation,
+    runBinarySimulation,
     getState: () => ({ ...state }),
   };
 }

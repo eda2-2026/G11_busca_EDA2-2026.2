@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  binarySearch,
   generateSecretCapacity,
   linearSearch,
   validateLoadRange,
@@ -67,7 +68,22 @@ test("capacidade igual à carga máxima conclui sem tentativa de quebra", () => 
   assert.equal(result.attempts.at(-1).load, 505);
 });
 
+test("busca binária localiza a carga limite com menos tentativas", () => {
+  const result = binarySearch(500, 510, 503);
+
+  assert.equal(result.highestSupported, 503);
+  assert.equal(result.brokenAt, 504);
+  assert.equal(result.attemptCount, 4);
+  assert.equal(result.attempts.at(-1).supported, false);
+  assert.deepEqual(
+    result.attempts.map(({ load }) => load),
+    [505, 502, 503, 504],
+  );
+});
+
 test("capacidade fora do intervalo lança erro", () => {
   assert.throws(() => linearSearch(500, 2000, 499), RangeError);
   assert.throws(() => linearSearch(500, 2000, 2001), RangeError);
+  assert.throws(() => binarySearch(500, 2000, 499), RangeError);
+  assert.throws(() => binarySearch(500, 2000, 2001), RangeError);
 });

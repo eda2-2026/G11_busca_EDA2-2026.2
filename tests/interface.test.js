@@ -12,6 +12,7 @@ test("HTML contém todos os controles obrigatórios e o cartão pendente", async
     "max-load",
     "generate-bridge",
     "run-linear",
+    "run-binary",
     "bridge-visual",
     "bridge-status",
     "tested-load",
@@ -19,22 +20,24 @@ test("HTML contém todos os controles obrigatórios e o cartão pendente", async
     "highest-supported",
     "trial-result",
     "binary-search-card",
+    "algorithm-comparison",
   ];
 
   for (const id of requiredIds) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
 
-  assert.match(html, /Pendente para a etapa 2/);
+  assert.doesNotMatch(html, /Etapa\s*\d|etapa\s*\d|Etapa do Aluno/i);
   assert.doesNotMatch(html, /binary-search\.js/);
 });
 
-test("botão da busca começa desabilitado", () => {
+test("botões de busca começam desabilitados", () => {
   const fakeDom = createFakeSimulatorDocument();
 
   createBridgeSimulator(fakeDom.document);
 
   assert.equal(fakeDom.get("#run-linear").disabled, true);
+  assert.equal(fakeDom.get("#run-binary").disabled, true);
 });
 
 test("interface exibe erro e mantém a busca bloqueada para campo vazio", () => {
@@ -48,7 +51,7 @@ test("interface exibe erro e mantém a busca bloqueada para campo vazio", () => 
   assert.equal(fakeDom.document.body.dataset.state, "invalid");
 });
 
-test("interface libera a busca depois de gerar uma ponte válida", () => {
+test("interface libera as buscas depois de gerar uma ponte válida", () => {
   const fakeDom = createFakeSimulatorDocument({ minimum: "500", maximum: "505" });
   const simulator = createBridgeSimulator(fakeDom.document, { random: () => 0 });
   const result = simulator.generateBridge();
@@ -60,6 +63,7 @@ test("interface libera a busca depois de gerar uma ponte válida", () => {
     capacity: 500,
   });
   assert.equal(fakeDom.get("#run-linear").disabled, false);
+  assert.equal(fakeDom.get("#run-binary").disabled, false);
   assert.equal(fakeDom.document.body.dataset.state, "ready");
 });
 
@@ -108,4 +112,19 @@ test("interface exibe corretamente o resultado da busca", async () => {
   assert.equal(fakeDom.get("#trial-result").textContent, "Quebrou");
   assert.equal(fakeDom.get("#secret-capacity").textContent, "502 kg");
   assert.match(fakeDom.get("#bridge-status").textContent, /Limite encontrado/);
+});
+
+test("painel de comparação mostra o estado pendente corretamente quando só a busca binária foi executada", async () => {
+  const fakeDom = createFakeSimulatorDocument({ minimum: "500", maximum: "2000" });
+  const simulator = createBridgeSimulator(fakeDom.document, {
+    random: () => 0.5,
+    delay: async () => {},
+  });
+
+  simulator.generateBridge();
+  await simulator.runBinarySimulation();
+
+  assert.equal(fakeDom.get("#binary-attempts").textContent, "10 tentativas");
+  assert.equal(fakeDom.get("#comparison-winner").textContent, "Aguardando busca linear");
+  assert.match(fakeDom.get("#comparison-difference").textContent, /linear/i);
 });

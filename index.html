@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Simulador de busca linear para descobrir a capacidade máxima de uma ponte."
+      content="Simulador de busca linear e binária para descobrir a capacidade máxima de uma ponte."
     />
-    <title>Bridge Lab | Busca Linear</title>
+    <title>Bridge Lab | Busca Linear e Binária</title>
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body data-state="ready">
@@ -19,7 +19,6 @@
           <small>Estruturas de Dados 2</small>
         </span>
       </a>
-      <span class="stage-badge">Etapa 1 · Busca linear</span>
     </header>
 
     <main id="main-content" class="page-shell">
@@ -28,8 +27,8 @@
           <p class="eyebrow">Simulação de resistência</p>
           <h1 id="page-title">Descubra o limite da ponte, carga por carga.</h1>
           <p class="hero-copy">
-            Gere uma capacidade secreta e acompanhe a busca linear aumentar a carga em
-            1 kg por tentativa até encontrar o limite estrutural.
+            Gere uma capacidade secreta e compare duas estratégias: a busca linear testa
+            carga por carga e a busca binária corta o intervalo pela metade a cada passo.
           </p>
         </div>
         <div class="hero-rule" aria-hidden="true">
@@ -40,9 +39,7 @@
       <section class="simulator-grid" aria-label="Simulador da ponte">
         <aside class="panel controls-panel" aria-labelledby="controls-title">
           <div class="section-heading">
-            <span class="step-number">01</span>
             <div>
-              <p class="eyebrow">Configuração</p>
               <h2 id="controls-title">Intervalo de cargas</h2>
             </div>
           </div>
@@ -92,6 +89,9 @@
               </button>
               <button id="run-linear" class="button button-primary" type="button" disabled>
                 Iniciar busca linear
+              </button>
+              <button id="run-binary" class="button button-primary" type="button" disabled>
+                Iniciar busca binária
               </button>
             </div>
           </form>
@@ -155,9 +155,7 @@
 
       <section class="algorithms" aria-labelledby="algorithms-title">
         <div class="section-heading">
-          <span class="step-number">02</span>
           <div>
-            <p class="eyebrow">Algoritmos</p>
             <h2 id="algorithms-title">Estratégias de descoberta</h2>
           </div>
         </div>
@@ -175,19 +173,44 @@
             </div>
           </article>
 
-          <article id="binary-search-card" class="algorithm-card pending-algorithm" aria-disabled="true">
+          <article id="binary-search-card" class="algorithm-card active-algorithm" aria-disabled="false">
             <div class="algorithm-card-header">
               <span class="algorithm-icon">B</span>
-              <span class="status-chip pending-chip">Pendente para a etapa 2</span>
+              <span class="status-chip ready-chip">Disponível</span>
             </div>
             <h3>Busca binária</h3>
             <p>
-              O painel interativo, os limites inferior, central e superior e a comparação
-              de eficiência serão implementados pelo Aluno 2.
+              Divide o intervalo ao meio, testa o ponto central e mantém apenas a faixa
+              que ainda pode conter a carga crítica.
             </p>
-            <div class="pending-placeholder" aria-hidden="true">
-              <i></i><i></i><i></i>
+            <div id="binary-search-log" class="attempt-log" aria-live="polite">
+              Nenhuma tentativa executada.
             </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="algorithm-comparison" class="comparison-panel" aria-label="Comparação dos algoritmos">
+        <div class="comparison-header">
+          <h3>Comparação dos algoritmos</h3>
+        </div>
+
+        <div class="comparison-grid">
+          <article class="comparison-card">
+            <span>Busca linear</span>
+            <strong id="linear-attempts">0 tentativas</strong>
+          </article>
+          <article class="comparison-card">
+            <span>Busca binária</span>
+            <strong id="binary-attempts">0 tentativas</strong>
+          </article>
+          <article class="comparison-card winner-card">
+            <span>Vencedor</span>
+            <strong id="comparison-winner">—</strong>
+          </article>
+          <article class="comparison-card">
+            <span>Diferença</span>
+            <strong id="comparison-difference">—</strong>
           </article>
         </div>
       </section>
@@ -195,7 +218,6 @@
 
     <footer>
       <span>G11 · EDA2 · 2026.2</span>
-      <span>Etapa do Aluno 1</span>
     </footer>
 
     <script type="module" src="js/app.js"></script>
