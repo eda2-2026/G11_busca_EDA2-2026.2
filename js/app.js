@@ -97,6 +97,8 @@ export function createBridgeSimulator(
     result: null,
     linearResult: null,
     binaryResult: null,
+    linearLogText: "Nenhuma tentativa executada.",
+    binaryLogText: "Nenhuma tentativa executada.",
   };
 
   function setVisualState(visualState) {
@@ -155,12 +157,15 @@ export function createBridgeSimulator(
   }
 
   function resetMetrics() {
+    state.linearLogText = "Nenhuma tentativa executada.";
+    state.binaryLogText = "Nenhuma tentativa executada.";
+
     elements.testedLoad.textContent = "—";
     elements.attemptCount.textContent = "0";
     elements.highestSupported.textContent = "—";
     elements.trialResult.textContent = "Aguardando";
-    elements.attemptLog.textContent = "Nenhuma tentativa executada.";
-    elements.binarySearchLog.textContent = "Nenhuma tentativa executada.";
+    elements.attemptLog.textContent = state.linearLogText;
+    elements.binarySearchLog.textContent = state.binaryLogText;
     elements.linearAttempts.textContent = "Aguardando";
     elements.binaryAttempts.textContent = "Aguardando";
     elements.comparisonWinner.textContent = "—";
@@ -260,7 +265,7 @@ export function createBridgeSimulator(
     elements.truck.style.left = `${left}%`;
   }
 
-  function renderAttempt(attempt, number, skippedCount = 0) {
+  function renderAttempt(attempt, number, skippedCount = 0, targetLog = elements.attemptLog) {
     const supported = attempt.supported;
     elements.testedLoad.textContent = formatLoad(attempt.load);
     elements.attemptCount.textContent = String(number);
@@ -269,7 +274,7 @@ export function createBridgeSimulator(
     elements.highestSupported.textContent = supported
       ? formatLoad(attempt.load)
       : formatLoad(attempt.load - 1);
-    elements.attemptLog.textContent = skippedCount
+    targetLog.textContent = skippedCount
       ? `Tentativa ${number}: ${formatLoad(attempt.load)} — ${supported ? "suportou" : "quebrou"} · animação acelerou ${skippedCount} testes intermediários.`
       : `Tentativa ${number}: ${formatLoad(attempt.load)} — ${supported ? "suportou" : "quebrou"}.`;
     elements.bridgeStatus.textContent = supported
@@ -292,8 +297,8 @@ export function createBridgeSimulator(
     elements.secretCapacity.textContent = "Testando…";
     elements.bridgeStatus.textContent = "Busca linear em execução.";
     elements.trialResult.textContent = "Testando";
-    elements.attemptLog.textContent = "Preparando a primeira carga…";
-    elements.binarySearchLog.textContent = "Preparando a primeira carga…";
+    state.linearLogText = "Preparando a primeira carga…";
+    elements.attemptLog.textContent = state.linearLogText;
 
     try {
       const result = linearSearch(
@@ -306,7 +311,7 @@ export function createBridgeSimulator(
 
       for (const frame of frames) {
         const skippedCount = Math.max(0, frame.index - previousIndex - 1);
-        renderAttempt(frame.attempt, frame.index + 1, skippedCount);
+        renderAttempt(frame.attempt, frame.index + 1, skippedCount, elements.attemptLog);
         previousIndex = frame.index;
         await delay(animationDelay);
       }
@@ -325,24 +330,20 @@ export function createBridgeSimulator(
         elements.bridgeStatus.textContent =
           `Limite encontrado: ${formatLoad(result.highestSupported)}. ` +
           `A primeira ruptura ocorreu em ${formatLoad(result.brokenAt)}.`;
-        elements.attemptLog.textContent =
+        state.linearLogText =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
-        elements.binarySearchLog.textContent =
-          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
-          `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
+        elements.attemptLog.textContent = state.linearLogText;
         setVisualState("broken");
       } else {
         elements.testedLoad.textContent = formatLoad(result.maximum);
         elements.trialResult.textContent = "Concluída";
         elements.bridgeStatus.textContent =
           `A ponte suportou a carga máxima de ${formatLoad(result.maximum)} sem quebrar.`;
-        elements.attemptLog.textContent =
+        state.linearLogText =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           "intervalo concluído sem tentativa de ruptura.";
-        elements.binarySearchLog.textContent =
-          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
-          "intervalo concluído sem tentativa de ruptura.";
+        elements.attemptLog.textContent = state.linearLogText;
         setVisualState("completed");
       }
 
@@ -366,8 +367,8 @@ export function createBridgeSimulator(
     elements.secretCapacity.textContent = "Testando…";
     elements.bridgeStatus.textContent = "Busca binária em execução.";
     elements.trialResult.textContent = "Testando";
-    elements.attemptLog.textContent = "Preparando a primeira avaliação do meio do intervalo…";
-    elements.binarySearchLog.textContent = "Preparando a primeira avaliação do meio do intervalo…";
+    state.binaryLogText = "Preparando a primeira avaliação do meio do intervalo…";
+    elements.binarySearchLog.textContent = state.binaryLogText;
 
     try {
       const result = binarySearch(
@@ -380,7 +381,7 @@ export function createBridgeSimulator(
 
       for (const frame of frames) {
         const skippedCount = Math.max(0, frame.index - previousIndex - 1);
-        renderAttempt(frame.attempt, frame.index + 1, skippedCount);
+        renderAttempt(frame.attempt, frame.index + 1, skippedCount, elements.binarySearchLog);
         previousIndex = frame.index;
         await delay(animationDelay);
       }
@@ -399,24 +400,20 @@ export function createBridgeSimulator(
         elements.bridgeStatus.textContent =
           `Limite encontrado por busca binária: ${formatLoad(result.highestSupported)}. ` +
           `A primeira ruptura ocorreu em ${formatLoad(result.brokenAt)}.`;
-        elements.attemptLog.textContent =
+        state.binaryLogText =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
-        elements.binarySearchLog.textContent =
-          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
-          `primeira carga não suportada: ${formatLoad(result.brokenAt)}.`;
+        elements.binarySearchLog.textContent = state.binaryLogText;
         setVisualState("broken");
       } else {
         elements.testedLoad.textContent = formatLoad(result.maximum);
         elements.trialResult.textContent = "Concluída";
         elements.bridgeStatus.textContent =
           `A ponte suportou a carga máxima de ${formatLoad(result.maximum)} sem quebrar.`;
-        elements.attemptLog.textContent =
+        state.binaryLogText =
           `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
           "intervalo concluído sem tentativa de ruptura.";
-        elements.binarySearchLog.textContent =
-          `${result.attemptCount.toLocaleString("pt-BR")} tentativas · ` +
-          "intervalo concluído sem tentativa de ruptura.";
+        elements.binarySearchLog.textContent = state.binaryLogText;
         setVisualState("completed");
       }
 

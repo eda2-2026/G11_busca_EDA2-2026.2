@@ -128,3 +128,40 @@ test("painel de comparação mostra o estado pendente corretamente quando só a 
   assert.equal(fakeDom.get("#comparison-winner").textContent, "Aguardando busca linear");
   assert.match(fakeDom.get("#comparison-difference").textContent, /linear/i);
 });
+
+test("cada algoritmo mantém seu próprio log de tentativas", async () => {
+  const fakeDom = createFakeSimulatorDocument({ minimum: "500", maximum: "505" });
+  const simulator = createBridgeSimulator(fakeDom.document, {
+    random: () => 0.4,
+    delay: async () => {},
+  });
+
+  simulator.generateBridge();
+  await simulator.runLinearSimulation();
+
+  assert.notEqual(
+    fakeDom.get("#attempt-log").textContent,
+    fakeDom.get("#binary-search-log").textContent,
+  );
+});
+
+test("executar uma busca depois da outra preserva os logs separados de cada algoritmo", async () => {
+  const fakeDom = createFakeSimulatorDocument({ minimum: "500", maximum: "505" });
+  const simulator = createBridgeSimulator(fakeDom.document, {
+    random: () => 0.4,
+    delay: async () => {},
+  });
+
+  simulator.generateBridge();
+  await simulator.runLinearSimulation();
+  const linearAfterFirstRun = fakeDom.get("#attempt-log").textContent;
+
+  await simulator.runBinarySimulation();
+  const linearAfterSecondRun = fakeDom.get("#attempt-log").textContent;
+  const binaryAfterSecondRun = fakeDom.get("#binary-search-log").textContent;
+
+  assert.match(linearAfterFirstRun, /tentativas/i);
+  assert.match(binaryAfterSecondRun, /tentativas/i);
+  assert.equal(linearAfterSecondRun, linearAfterFirstRun);
+  assert.notEqual(linearAfterSecondRun, binaryAfterSecondRun);
+});
