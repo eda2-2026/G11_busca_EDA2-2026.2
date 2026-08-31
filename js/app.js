@@ -1,9 +1,9 @@
 import {
-  binarySearch,
   generateSecretCapacity,
   linearSearch,
   validateLoadRange,
 } from "./linear-search.js";
+import { binarySearch } from "./binary-search.js";
 
 const DEFAULT_ANIMATION_DELAY = 22;
 const MAX_ANIMATION_FRAMES = 52;

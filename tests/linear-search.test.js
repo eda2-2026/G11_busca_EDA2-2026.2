@@ -1,12 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  binarySearch,
-  generateSecretCapacity,
-  linearSearch,
-  validateLoadRange,
-} from "../js/linear-search.js";
+import { generateSecretCapacity, linearSearch, validateLoadRange } from "../js/linear-search.js";
+import { binarySearch } from "../js/binary-search.js";
 
 test("rejeita campo vazio", () => {
   const result = validateLoadRange("", "2000");
