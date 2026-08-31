@@ -7,6 +7,7 @@ import {
 
 const DEFAULT_ANIMATION_DELAY = 22;
 const MAX_ANIMATION_FRAMES = 52;
+const TRUCK_RESET_DELAY = 140;
 
 const sleep = (milliseconds) =>
   new Promise((resolve) => {
@@ -265,6 +266,12 @@ export function createBridgeSimulator(
     elements.truck.style.left = `${left}%`;
   }
 
+  async function resetTruckAnimation() {
+    elements.truck.style.left = "8%";
+    elements.truckLoad.textContent = "0 kg";
+    await delay(Math.max(animationDelay, TRUCK_RESET_DELAY));
+  }
+
   function renderAttempt(attempt, number, skippedCount = 0, targetLog = elements.attemptLog) {
     const supported = attempt.supported;
     elements.testedLoad.textContent = formatLoad(attempt.load);
@@ -371,6 +378,8 @@ export function createBridgeSimulator(
     elements.binarySearchLog.textContent = state.binaryLogText;
 
     try {
+      await resetTruckAnimation();
+
       const result = binarySearch(
         state.minimum,
         state.maximum,

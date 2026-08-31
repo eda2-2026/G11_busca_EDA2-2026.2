@@ -165,3 +165,23 @@ test("executar uma busca depois da outra preserva os logs separados de cada algo
   assert.equal(linearAfterSecondRun, linearAfterFirstRun);
   assert.notEqual(linearAfterSecondRun, binaryAfterSecondRun);
 });
+
+test("busca binaria retorna o caminhão à origem antes de executar novamente", async () => {
+  const fakeDom = createFakeSimulatorDocument({ minimum: "500", maximum: "505" });
+  const positionsAtDelay = [];
+  const simulator = createBridgeSimulator(fakeDom.document, {
+    random: () => 0.4,
+    delay: async () => {
+      positionsAtDelay.push(fakeDom.get(".test-truck").style.left);
+    },
+  });
+
+  simulator.generateBridge();
+  await simulator.runBinarySimulation();
+  positionsAtDelay.length = 0;
+
+  await simulator.runBinarySimulation();
+
+  assert.equal(positionsAtDelay[0], "8%");
+  assert.notEqual(positionsAtDelay[1], "8%");
+});
