@@ -20,7 +20,7 @@ O projeto utiliza o cenário de uma ponte com capacidade máxima desconhecida, o
 Acesse ele [aqui](https://eda2-2026.github.io/G11_busca_EDA2-2026.2/).
 
 ## Vídeo
-Assista o vídeo de apresentação [aqui](https://youtube.com).
+Assista o vídeo de apresentação [aqui](https://youtu.be/2QgWwxlbNuU).
 
 ## Algoritmo
 O **Needleman-Wunsch** é um algoritmo de alinhamento global que utiliza programação dinâmica para encontrar o melhor alinhamento entre duas sequências.
